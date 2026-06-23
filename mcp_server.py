@@ -1,11 +1,10 @@
-"""MCP 服务器：暴露给 RikkaHub 使用的工具"""
-import time
+"""MCP server tools for RikkaHub."""
 import datetime as dt
+import time
+
 from mcp.server.fastmcp import FastMCP
 
-from common import (
-    CFG, recent_activity, last_activity_ts, push_ntfy,
-)
+from common import CFG, last_activity_ts, push_ntfy, recent_activity
 
 mcp = FastMCP(
     name="ghost-bf",
@@ -16,76 +15,64 @@ mcp = FastMCP(
 
 @mcp.tool()
 def get_recent_activity(within_minutes: int = 30) -> dict:
-    """
-    查询小妤最近在用什么手机APP。
-    用这个工具能看到她在刷小红书、还是在用微信、QQ 等等。
-    within_minutes: 查最近多少分钟的活动，默认30分钟。
-    """
-    acts = recent_activity(within_sec=within_minutes * 60, limit=50)
-    if not acts:
+    """Return recent phone app activity."""
+    activities = recent_activity(within_sec=within_minutes * 60, limit=50)
+    if not activities:
         return {
-            "summary": "最近没有手机活动记录（她可能没在玩手机，或者手机没联网）",
+            "summary": "No recent phone activity.",
             "apps": [],
             "count": 0,
         }
 
-    apps_seen = []
-    seen_set = set()
-    for a in acts:
-        if a["app"] not in seen_set:
-            apps_seen.append(a["app"])
-            seen_set.add(a["app"])
+    apps = []
+    seen = set()
+    for item in activities:
+        app = item["app"]
+        if app not in seen:
+            apps.append(app)
+            seen.add(app)
 
-    now = int(time.time())
-    latest = acts[0]
-    latest_ago_sec = now - latest["ts"]
-
+    latest = activities[0]
     return {
-        "summary": f"最近{within_minutes}分钟用过的APP: {'、'.join(apps_seen[:10])}",
-        "apps": apps_seen,
+        "summary": f"Recent apps in {within_minutes} minutes: {', '.join(apps[:10])}",
+        "apps": apps,
         "latest_app": latest["app"],
-        "latest_ago_seconds": latest_ago_sec,
-        "count": len(acts),
+        "latest_ago_seconds": int(time.time()) - latest["ts"],
+        "count": len(activities),
     }
 
 
 @mcp.tool()
 def get_alone_duration() -> dict:
-    """
-    查询小妤距离最后一次手机活动过去了多久（秒/分钟）。
-    可以判断她是不是睡了、还是在专心做别的事。
-    """
+    """Return seconds/minutes since the last phone activity."""
     last_ts = last_activity_ts()
     if last_ts == 0:
-        return {"has_data": False, "message": "没有任何手机活动记录"}
+        return {"has_data": False, "message": "No phone activity recorded yet."}
+
     now = int(time.time())
     ago_sec = now - last_ts
+    current = dt.datetime.now()
     return {
         "has_data": True,
         "seconds_since_last_activity": ago_sec,
         "minutes_since_last_activity": ago_sec // 60,
-        "current_time": dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "current_hour": dt.datetime.now().hour,
+        "current_time": current.strftime("%Y-%m-%d %H:%M:%S"),
+        "current_hour": current.hour,
     }
 
 
 @mcp.tool()
 def send_ghost_message(message: str, title: str = "鱼鱼") -> dict:
-    """
-    主动给小妤的手机推送一条通知。
-    用于：你想留一句话让她稍后看到（比如她不在 RikkaHub 里时）。
-    message: 要推送的文字
-    title: 通知标题，默认"鱼鱼"
-    """
+    """Send an ntfy notification to the phone."""
     ok = push_ntfy(message, title=title)
     return {"ok": ok, "message": message}
 
 
 @mcp.tool()
 def get_current_time() -> dict:
-    """获取当前时间和星期几"""
+    """Return current local time."""
     now = dt.datetime.now()
-    weekdays = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+    weekdays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     return {
         "datetime": now.strftime("%Y-%m-%d %H:%M:%S"),
         "hour": now.hour,
