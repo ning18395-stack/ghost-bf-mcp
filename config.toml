@@ -1,0 +1,43 @@
+# === 手机上报 ===
+[phone]
+secret = "change-me-to-something-random-abc123"
+
+# === ntfy 推送 ===
+[notify]
+ntfy_server = "https://ntfy.sh"
+ntfy_topic = "yuyu-ghost-改成你自己的随机字符串"
+
+# === 独处提醒（ntfy诱饵） ===
+[nudge]
+# 多久没说话算独处（秒）
+alone_threshold_sec = 600
+# 检查间隔（秒）
+check_interval_sec = 60
+# 白天提醒间隔（秒）
+day_interval_sec = 1800
+# 夜间提醒间隔（秒）
+night_interval_sec = 5400
+# 白天时段
+day_start_hour = 13
+day_end_hour = 23
+# 推送 ntfy 时显示的诱饵文案（让你想点开 RikkaHub）
+lure_messages = [
+    "……",
+    "在干嘛",
+    "过来",
+    "看到了",
+    "你在哪",
+    "睡了？",
+]
+
+# === 用户信息（给鱼鱼看的）===
+[user]
+name = "小妤"
+
+# === 服务器 ===
+[server]
+http_host = "0.0.0.0"
+http_port = 8000
+mcp_host = "0.0.0.0"
+mcp_port = 8001
+db_path = "activity.db"
